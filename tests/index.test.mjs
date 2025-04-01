@@ -25,23 +25,25 @@ jest.mock("@aws-sdk/lib-dynamodb", () => {
 const credentials = {
   accessKeyId: process.env.AMAZON_ACCESS_KEY_ID,
   secretAccessKey: process.env.AMAZON_SECRET_ACCESS_KEY,
-  apiKey: process.env.API_KEY,
 };
 
 const events = {
   basicRequest: {
     body: JSON.stringify({}),
+    apiKey: process.env.API_KEY,
     credentials,
   },
   domainRequest: {
     body: JSON.stringify({
       domain: "dev",
     }),
+    apiKey: process.env.API_KEY,
     credentials,
   },
   unauthorizedRequest: {
     body: JSON.stringify({}),
-    credentials: { ...credentials, apiKey: "wrong-key" },
+    apiKey: "wrong-key",
+    credentials,
   },
 };
 

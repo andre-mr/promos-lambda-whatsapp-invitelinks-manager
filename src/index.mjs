@@ -5,8 +5,8 @@ export const handler = async (event) => {
     let providedApiKey = "";
     const expectedApiKey = process.env.API_KEY;
 
-    if (event.credentials) {
-      providedApiKey = event.credentials.apiKey;
+    if (event.apiKey) {
+      providedApiKey = event.apiKey;
     } else {
       providedApiKey = event.headers?.["x-api-key"] || event.headers?.["X-Api-Key"];
     }
