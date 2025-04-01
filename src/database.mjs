@@ -36,7 +36,7 @@ export const updateInviteLinks = async (payload, event = {}) => {
   try {
     initializeClient(event);
 
-    const domain = payload?.domain || "";
+    const domain = payload?.domain ? sanitizeKey(payload.domain.toUpperCase()) : "";
 
     const groups = await getAllGroups();
 
@@ -56,7 +56,7 @@ export const updateInviteLinks = async (payload, event = {}) => {
     for (const key in groupedGroups) {
       const [domainKey, categoryKey] = key.split("#");
 
-      if ((domain && domainKey !== domain.toUpperCase()) || !domainKey) {
+      if ((domain && domainKey !== domain) || !domainKey) {
         continue;
       }
 
