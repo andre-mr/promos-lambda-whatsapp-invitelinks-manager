@@ -8,10 +8,10 @@
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
   "devDependencies": {
-    "@aws-sdk/client-dynamodb": "^3.758.0",
-    "@aws-sdk/lib-dynamodb": "^3.758.0",
-    "dotenv": "^16.4.7",
-    "jest": "^29.5.0"
+    "@aws-sdk/client-dynamodb": "3.758.0",
+    "@aws-sdk/lib-dynamodb": "3.758.0",
+    "dotenv": "16.4.7",
+    "jest": "29.5.0"
   },
   "jest": {
     "transform": {},
