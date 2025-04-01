@@ -27,7 +27,7 @@ export const handler = async (event) => {
       };
     }
 
-    const payload = JSON.parse(event.body);
+    const payload = event.body ? JSON.parse(event.body) : {};
     const resultStatus = await updateInviteLinks(payload, event);
 
     let message;
