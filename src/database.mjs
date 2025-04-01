@@ -128,10 +128,14 @@ async function putInviteLink(item) {
   return docClient.send(command);
 }
 
+function sanitizeKey(str) {
+  return str.replace(/[^a-zA-Z0-9]/g, ""); // Remove all non-alphanumeric chars
+}
+
 function groupByDomainAndCategory(groups) {
   return groups.reduce((acc, group) => {
-    const domain = group.Domain ? group.Domain.toUpperCase() : "";
-    const category = group.Category ? group.Category.toUpperCase() : "";
+    const domain = group.Domain ? sanitizeKey(group.Domain.toUpperCase()) : "";
+    const category = group.Category ? sanitizeKey(group.Category.toUpperCase()) : "";
 
     let key;
     if (domain && category) {
