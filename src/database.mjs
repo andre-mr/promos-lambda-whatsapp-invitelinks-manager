@@ -19,7 +19,7 @@ export const initializeClient = (event = {}) => {
     region: process.env.AMAZON_REGION,
   };
 
-  // Only use credentials if provided in the event object (for testing)
+  // only use credentials if provided in the event object (for testing)
   if (event.credentials) {
     config.credentials = {
       accessKeyId: event.credentials.accessKeyId,
@@ -38,12 +38,12 @@ export const updateInviteLinks = async (payload, event = {}) => {
 
     const domain = payload?.domain ? sanitizeKey(payload.domain.toUpperCase()) : "";
 
-    const groups = await getAllGroups();
+    const existingInviteLinks = await getAllInviteLinks();
 
+    const groups = await getAllGroups();
     const publishableGroups = groups.filter((group) => group.Publishable === true && group.InviteCode);
 
     const categories = await getAllCategories();
-
     const categoryMap = categories.reduce((acc, category) => {
       acc[category.SK] = category.Name;
       return acc;
@@ -53,6 +53,12 @@ export const updateInviteLinks = async (payload, event = {}) => {
 
     const updatePromises = [];
 
+    // process domain-specific filtering
+    const relevantExistingLinks = domain
+      ? existingInviteLinks.filter((link) => link.SK.startsWith(domain))
+      : existingInviteLinks;
+
+    // update items that have publishable groups
     for (const key in groupedGroups) {
       const [domainKey, categoryKey] = key.split("#");
 
@@ -65,7 +71,6 @@ export const updateInviteLinks = async (payload, event = {}) => {
         .slice(0, 10);
 
       const inviteCodes = sortedGroups.map((group) => `${group.SK}|${group.Name}|${group.InviteCode}`);
-
       const domainDisplayName = sortedGroups.length > 0 ? sortedGroups[0].Domain : formatName(domainKey);
 
       const SK = categoryKey ? `${domainKey}#${categoryKey}` : domainKey;
@@ -82,6 +87,29 @@ export const updateInviteLinks = async (payload, event = {}) => {
       }
 
       updatePromises.push(putInviteLink(params));
+    }
+
+    // handle existing items that no longer have publishable groups
+    for (const item of relevantExistingLinks) {
+      const SK = item.SK;
+
+      if (!groupedGroups[SK]) {
+        // Item no longer has publishable groups - update with empty array
+        const params = {
+          PK: item.PK,
+          SK: item.SK,
+          DomainName: item.DomainName || formatName(SK.split("#")[0]),
+          InviteCodes: [],
+          Updated: new Date().toISOString(),
+        };
+
+        // Preserve CategoryName for categorized items
+        if (SK.includes("#") && item.CategoryName) {
+          params.CategoryName = item.CategoryName;
+        }
+
+        updatePromises.push(putInviteLink(params));
+      }
     }
 
     await Promise.all(updatePromises);
@@ -119,6 +147,19 @@ async function getAllCategories() {
   return response.Items || [];
 }
 
+async function getAllInviteLinks() {
+  const command = new QueryCommand({
+    TableName: AMAZON_DYNAMODB_TABLE,
+    KeyConditionExpression: "PK = :pk",
+    ExpressionAttributeValues: {
+      ":pk": "WHATSAPP#INVITELINKS",
+    },
+  });
+
+  const response = await docClient.send(command);
+  return response.Items || [];
+}
+
 async function putInviteLink(item) {
   const command = new PutCommand({
     TableName: AMAZON_DYNAMODB_TABLE,
@@ -129,7 +170,7 @@ async function putInviteLink(item) {
 }
 
 function sanitizeKey(str) {
-  return str.replace(/[^a-zA-Z0-9]/g, ""); // Remove all non-alphanumeric chars
+  return str.replace(/[^a-zA-Z0-9]/g, ""); // remove all non-alphanumeric chars
 }
 
 function groupByDomainAndCategory(groups) {
